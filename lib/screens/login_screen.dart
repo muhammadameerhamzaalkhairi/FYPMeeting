@@ -1,0 +1,118 @@
+import 'package:flutter/material.dart';
+import 'package:livemeet/screens/main_screen.dart';
+import 'package:livemeet/widgets/Button.dart';
+import 'package:livemeet/widgets/CustomText.dart';
+import 'package:livemeet/widgets/TextBox.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  TextEditingController email=TextEditingController();
+  TextEditingController password=TextEditingController();
+bool isLoading=false;
+
+  @override
+  void dispose() {
+    email.dispose();
+    password.dispose();
+    super.dispose();
+  }
+final formKey = GlobalKey<FormState>();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(42, 80, 42, 42),
+          child: Form(
+            key: formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Image.asset('lib/assets/images/logo.png', height: 56,),
+                    SizedBox(width: 10,),
+                    CustomText(
+                      text: 'Live Meet',
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    )
+                  ],
+                ),
+                SizedBox(height: 80,),
+                CustomText(text: 'Welcome back'),
+                CustomText(text: 'Sign in', fontSize: 48, fontWeight: FontWeight.w900,),
+            
+                SizedBox(height: 20,),
+                TextBox(
+                  hintText: 'Email',
+                  controller: email,
+                                    validator: (value){
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Email is required';
+                    }
+                    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                    if (!emailRegex.hasMatch(value.trim())) {
+                      return 'Enter a valid email';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20,),
+                TextBox(
+                  hintText: 'Password',
+                  controller: password,
+                  obscureText: true,
+                  validator: (value){
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Password is required';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20,),
+                  Button(
+                  text: isLoading ? 'Signning in...' : 'Sign in',
+                  onTap: () async {
+                    if (isLoading) return;
+
+                    if (!formKey.currentState!.validate()) {
+                      return;
+                    }
+
+                    setState(() => isLoading = true);
+
+                    try {
+                      await Supabase.instance.client.auth.signInWithPassword(
+                        email: email.text.trim(),
+                        password: password.text,
+                      );
+
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => MainScreen()),
+                      );
+                    }
+                    catch(e){
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: $e')),
+                      );
+                      setState(() => isLoading = false);
+                    }
+                  },
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
